@@ -3,14 +3,13 @@ package com.sksamuel.elastic4s.aws
 
 import com.sksamuel.elastic4s.ElasticsearchClientUri
 import com.sksamuel.elastic4s.http.HttpClient
-import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials, DefaultAWSCredentialsProviderChain}
-
+import com.amazonaws.auth._
 import org.elasticsearch.client.RestClientBuilder.HttpClientConfigCallback
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
 import org.apache.http.protocol.HttpContext
 import org.apache.http.{HttpRequest, HttpRequestInterceptor}
 
-case class Aws4ElasticConfig(endpoint: String, key: String, secret: String, region: String, service: String = "es") {
+case class Aws4ElasticConfig(endpoint: String, key: String, secret: String, region: String, sessionToken: Option[String] = None, service: String = "es") {
   require(key.length > 16 && key.length < 128 && key.matches("[\\w]+"), "Key id must be between 16 and 128 characters.")
 }
 
@@ -48,7 +47,16 @@ private class DefaultSignedClientConfig extends HttpClientConfigCallback {
 }
 
 private class Aws4HttpRequestInterceptor(config: Aws4ElasticConfig) extends HttpRequestInterceptor {
-  private val chainProvider = new AWSStaticCredentialsProvider(new BasicAWSCredentials(config.key, config.secret))
+
+  val chainProvider = config.sessionToken match {
+    case Some(sessionToken) =>
+      val credentials = new BasicSessionCredentials(config.key, config.secret, sessionToken)
+      new STSSessionCredentialsProvider(credentials)
+    case None =>
+      val credentials = new BasicAWSCredentials(config.key, config.secret)
+      new AWSStaticCredentialsProvider(credentials)
+  }
+
   private val signer = new Aws4RequestSigner(chainProvider, config.region, config.service)
 
   override def process(request: HttpRequest, context: HttpContext): Unit = signer.withAws4Headers(request)

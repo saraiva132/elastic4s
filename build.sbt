@@ -167,8 +167,9 @@ lazy val sprayjson = Project("elastic4s-spray-json", file("elastic4s-spray-json"
 lazy val aws = Project("elastic4s-aws", file("elastic4s-aws"))
   .settings(
     name := "elastic4s-aws",
-    libraryDependencies += "com.amazonaws" % "aws-java-sdk-core" % AWSJavaSdkVersion
-  ).dependsOn(core, http)
+    libraryDependencies += "com.amazonaws" % "aws-java-sdk-sts" % AWSJavaSdkVersion
+
+).dependsOn(core, http)
 
 lazy val tests = Project("elastic4s-tests", file("elastic4s-tests"))
   .settings(

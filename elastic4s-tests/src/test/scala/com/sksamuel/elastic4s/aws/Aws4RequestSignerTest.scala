@@ -23,7 +23,7 @@ class Aws4RequestSignerTest extends WordSpec with Matchers with SharedTestData {
 
     "be able to add security Token Header if there is a session key in context" in {
       val credentials = new BasicSessionCredentials(awsKey, awsSecret, awsSessionToken)
-      val chainProvider = new AWSStaticCredentialsProvider(credentials)
+      val chainProvider = new STSSessionCredentialsProvider(credentials)
       val signer = new Aws4TestRequestSigner(chainProvider, region, date, dateTime)
       val withHeaders = signer.withAws4Headers(httpPostRequest)
       withHeaders.getAllHeaders find (_.getName == "X-Amz-Security-Token") match {
